@@ -1,0 +1,30 @@
+name: Checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  focused-tests:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare test directory
+        run: New-Item -ItemType Directory -Force test-work
+      - name: Python regression checks
+        working-directory: tests
+        run: python -m unittest test_product_features test_save_defaults test_video.PolicyTests test_v02.EvidenceTests -v
+      - name: Browser simulation checks
+        run: |
+          node tests/test_browser_policy.cjs
+          node tests/test_browser_capture.cjs
+  rust:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo test --offline
+      - run: cargo build --release --offline

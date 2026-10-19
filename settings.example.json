@@ -1,0 +1,4 @@
+{
+  "node": "C:\\path\\to\\node.exe",
+  "rea_entry": "C:\\path\\to\\node_modules\\rea-agents\\scripts\\rea.mjs"
+}
