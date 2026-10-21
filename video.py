@@ -10,6 +10,7 @@ import subprocess
 import sys
 import threading
 import time
+from urllib.parse import urlsplit
 
 from engine import Control,Interrupted,atomic_json,digest,job_lock,publish,validate_url
 from media_policy import check_info,reject_youtube
@@ -19,7 +20,9 @@ ROOT=Path(__file__).resolve().parent
 def tools():
     yt=os.environ.get('KORA_YTDLP') or str(ROOT/'tools/yt-dlp.exe')
     ff=os.environ.get('KORA_FFMPEG') or str(ROOT/'tools/ffmpeg/ffmpeg.exe')
-    if not Path(yt).is_file():yt=shutil.which('yt-dlp.exe') or ''
+    if os.environ.get('KORA_YTDLP') and not Path(yt).is_file():
+        raise RuntimeError('KORA_YTDLP does not point to a video tool.')
+    if not Path(yt).is_file() and not (ROOT/'vendor/yt_dlp/__main__.py').is_file():yt=shutil.which('yt-dlp.exe') or ''
     if not Path(ff).is_file():ff=shutil.which('ffmpeg.exe') or ''
     if yt and Path(yt).is_file():command=[yt]
     elif (ROOT/'vendor/yt_dlp/__main__.py').is_file():command=[sys.executable,str(ROOT/'video_tool.py')]
@@ -32,6 +35,9 @@ def base_args(context=None):
           '--use-extractors','default,-.*youtube.*','--socket-timeout','20','--retries','10','--extractor-retries','3','--http-chunk-size','10M']
     if ff:args+=['--ffmpeg-location',str(Path(ff).parent)]
     context=context or {}
+    if context.get('twitter_api'):
+        if context['twitter_api'] not in ('graphql','syndication'):raise ValueError('Invalid Twitter extraction method')
+        args+=['--extractor-args','twitter:api='+context['twitter_api']]
     if context.get('referer'):
         validate_url(context['referer']);args+=['--referer',context['referer']]
     if context.get('user_agent'):
@@ -81,7 +87,7 @@ def run(args,control=None,timeout=180,on_line=None):
         if code:
             detail=''.join(errors).strip()
             detail=re.sub(r'https?://\S+','[video URL]',detail)
-            if any(word in detail.lower() for word in ('login','sign in','cookies','private')):
+            if re.search(r'(?:login required|sign in to|requires? (?:a )?login|private (?:video|tweet|post)|only available (?:for|to) registered)',detail,re.I):
                 raise RuntimeError('This video requires login or is private. Kora has not imported a browser session.')
             if 'drm' in detail.lower():raise RuntimeError('This video is DRM-protected and is not supported')
             raise RuntimeError(detail[-1500:] or f'Video tool exited with code {code}')
@@ -90,9 +96,27 @@ def run(args,control=None,timeout=180,on_line=None):
         if process.poll() is None:stop_tree(process)
         for thread in threads:thread.join(timeout=3)
 
+def twitter_url(url):
+    """Canonicalize official post links, preserving a selected video number."""
+    parts=urlsplit(url)
+    if parts.hostname not in ('x.com','www.x.com','mobile.x.com','twitter.com','www.twitter.com','mobile.twitter.com','m.twitter.com'):return url,False
+    match=re.fullmatch(r'/(?:[^/]+/status|i/web/status|i/status|statuses)/(\d+)(/video/[1-9]\d*)?/?',parts.path)
+    if not match:return url,False
+    return 'https://twitter.com/i/web/status/'+match[1]+(match[2] or ''),True
+
 def inspect_video(url,control=None,context=None):
     validate_url(url)
-    raw=run([*base_args(context),'--dump-single-json','--skip-download','--',url],control,timeout=180)
+    url,is_twitter=twitter_url(url)
+    context=dict(context or {})
+    try:
+        raw=run([*base_args(context),'--dump-single-json','--skip-download','--',url],control,timeout=180)
+    except RuntimeError as first:
+        if not is_twitter or 'drm' in str(first).lower():raise
+        if control:control.check()
+        context['twitter_api']='syndication'
+        try:raw=run([*base_args(context),'--dump-single-json','--skip-download','--',url],control,timeout=180)
+        except RuntimeError as exc:
+            raise RuntimeError('Twitter/X could not provide this video. Update video tools and retry. The post may be unavailable or require login. Details: '+str(exc)) from exc
     try:info=json.loads(raw)
     except ValueError as exc:raise RuntimeError('Video information was not valid JSON') from exc
     check_info(info)
@@ -114,7 +138,8 @@ def inspect_video(url,control=None,context=None):
                         'size':entry.get('filesize') or entry.get('filesize_approx'),'note':entry.get('format_note') or ''})
     if not formats:raise ValueError('No downloadable, unprotected video formats were found')
     return {'title':str(info.get('title') or 'Video')[:400],'duration':info.get('duration'),'thumbnail':info.get('thumbnail'),
-            'extractor':info.get('extractor_key') or info.get('extractor'),'formats':formats}
+            'extractor':info.get('extractor_key') or info.get('extractor'),'formats':formats,
+            'extraction_context':context,'source_url':url}
 
 def selector_for(selection,info):
     selection=selection or {'mode':'best'}
@@ -141,6 +166,8 @@ def download_video(url,output,selection=None,control=None,progress=None):
     if not ff:raise RuntimeError('FFmpeg is missing. Run Setup-Video-Tools.cmd.')
     context=(selection or {}).get('context') or {}
     info=inspect_video(url,control,context);selector=selector_for(selection,info)
+    context=info.get('extraction_context',context)
+    url=info.get('source_url',url)
     target.parent.mkdir(parents=True,exist_ok=True);work=Path(str(target)+'.kora-video');work.mkdir(exist_ok=True)
     with job_lock(work):
         import hashlib

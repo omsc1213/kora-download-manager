@@ -1,6 +1,6 @@
 [package]
 name = "kora"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2021"
 description = "Original download manager and REA command bridge"
 
@@ -9,3 +9,4 @@ description = "Original download manager and REA command bridge"
 [profile.release]
 strip = true
 lto = true
+

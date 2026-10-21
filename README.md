@@ -5,7 +5,7 @@
 Download files and supported videos, choose quality, and pick up paused transfers.
 No payment or activation key is required by Kora. No built-in advertising.
 
-**Preview release: v0.4.0.** Kora is an independent project, not affiliated with or
+**Preview release: v0.4.1.** Kora is an independent project, not affiliated with or
 endorsed by Internet Download Manager (IDM). Feature parity and faster speeds
 than IDM are not claimed.
 
@@ -14,7 +14,7 @@ than IDM are not claimed.
 For Windows 10/11 x64. Internet access is required during setup.
 
 Open [Releases](https://github.com/omsc1213/kora-download-manager/releases) and
-download **Kora-v0.4.0-Windows-Online.zip**. Extract the complete folder and run
+download **Kora-v0.4.1-Windows-Online.zip**. Extract the complete folder and run
 **Setup.cmd**. This is an online installer: internet access is required for
 Python (when missing) and the video tools. Third-party binaries are obtained
 from upstream sources, rather than included in this public ZIP.
@@ -92,3 +92,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md) and
 
 Kora's original code is MIT-licensed. Dependencies retain their own licenses.
 Download only content you are authorized to save and follow applicable site rules.
+

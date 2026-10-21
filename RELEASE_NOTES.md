@@ -1,23 +1,13 @@
-# Kora v0.4.0 Preview
+# Kora 0.4.1 Preview
 
-A free, open-source alternative to IDM for Windows.
+Fixes for public Twitter/X video links:
 
-Included: parallel file downloads, pause/resume and persistent queue, supported
-video-page extraction and quality selection, batch links, automatic filenames,
-dedicated folders, previews, saved preferences, adaptive backoff, video-tool
-updates with rollback, and browser setup controls.
+- Recognize official X, Twitter and mobile post URLs, remove tracking parameters, and preserve selected video numbers.
+- Retry with Twitter's public syndication endpoint when the default extractor fails. Use the successful method for the actual download.
+- Prefer Kora's installed video extractor over an older copy found on the system PATH.
+- Add regression coverage for fallback downloads, cancellation, URL boundaries and extractor precedence.
 
-Download Kora-v0.4.0-Windows-Online.zip, extract it and run Setup.cmd.
-Internet access is needed to install missing runtime/video dependencies.
-Python, yt-dlp and FFmpeg are downloaded separately, not bundled in this ZIP.
+Install: extract the Windows Online ZIP and run Setup.cmd. Existing users should close Kora before replacing their application files and run Setup-Video-Tools.cmd to refresh the extractor. Keep your existing data folder.
 
-This is a preview, not a feature-for-feature IDM replacement. YouTube, DRM and
-inaccessible/private videos are unsupported. Site compatibility varies.
-Live-site tests and an installed-browser extension round trip need broader testing.
-The fresh-runtime online bootstrap has not been exercised in the restricted
-development environment; installing with an existing compatible runtime is tested.
+This is a preview. Private, deleted, login-required and DRM-protected videos are unsupported. Twitter/X can change its endpoints. Automated regression tests use simulated extractor responses; live site compatibility is not guaranteed. YouTube remains excluded.
 
-Please report Windows version, Kora version, steps to reproduce and sanitized
-errors when submitting bugs. No speed advantage over IDM is claimed.
-
-Kora is independent and is not affiliated with or endorsed by IDM.
