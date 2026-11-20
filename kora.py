@@ -12,6 +12,12 @@ ROOT=Path(__file__).resolve().parent
 
 def main(args=None):
     args=list(sys.argv[1:] if args is None else args)
+    if args and args[0]=='--version':
+        print('Kora 0.4.2');return 0
+    if args and args[0]=='doctor':
+        from diagnostics import report
+        result=report();print(json.dumps(result,indent=2,ensure_ascii=False))
+        return 0 if result['startup_ready'] else 1
     if args and args[0]=='native-host':
         from browser_host import run
         run(args[1] if len(args)>1 else '');return 0
@@ -29,7 +35,7 @@ def main(args=None):
     if args[0]=='rea':
         code,out,err=capture(args[1:],timeout=3600)
         sys.stdout.buffer.write(out);sys.stderr.buffer.write(err);return code
-    parser=argparse.ArgumentParser(description='Kora Download Manager 0.3')
+    parser=argparse.ArgumentParser(description='Kora Download Manager 0.4.2')
     sub=parser.add_subparsers(dest='command',required=True)
     get=sub.add_parser('download');get.add_argument('url');get.add_argument('output');get.add_argument('connections',nargs='?',type=int,default=8)
     inspect=sub.add_parser('idm-workflow');inspect.add_argument('out',nargs='?',default=str(ROOT/'evidence/latest-v02'));inspect.add_argument('--target',default=r'')

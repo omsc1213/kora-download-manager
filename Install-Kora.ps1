@@ -17,11 +17,15 @@ function Test-KoraPython([string]$Candidate) {
 }
 $pythonPath=$null
 $candidates=@($PythonExe,(Join-Path $target 'runtime\python.exe'),$env:KORA_PYTHON)
+$pointer=Join-Path $target 'python-path.txt'
+if (Test-Path -LiteralPath $pointer) { $candidates+= (Get-Content -LiteralPath $pointer -Raw).Trim() }
 $found=Get-Command python.exe -ErrorAction SilentlyContinue
 if ($found -and $found.Source -notlike '*WindowsApps*') { $candidates+= $found.Source }
 if (Get-Command py.exe -ErrorAction SilentlyContinue) {
-    $candidate=& py.exe -3 -c 'import sys; print(sys.executable)' 2>$null
-    if ($LASTEXITCODE -eq 0) { $candidates+= ($candidate | Select-Object -First 1) }
+    try {
+        $candidate=& py.exe -3 -c 'import sys; print(sys.executable)' 2>$null
+        if ($LASTEXITCODE -eq 0) { $candidates+= ($candidate | Select-Object -First 1) }
+    } catch { }
 }
 foreach ($candidate in $candidates) { if (Test-KoraPython $candidate) { $pythonPath=$candidate;break } }
 if ($PythonExe -and -not $pythonPath) { throw 'The supplied Python executable must be Python 3.10+ with working Tcl/Tk, SQLite and SSL.' }
@@ -60,8 +64,10 @@ if (-not $NoShortcuts) {
     $shell=New-Object -ComObject WScript.Shell
     foreach ($folder in @([Environment]::GetFolderPath('Programs'),[Environment]::GetFolderPath('Desktop'))) {
         $shortcut=$shell.CreateShortcut((Join-Path $folder 'Kora Download Manager.lnk'))
-        $shortcut.TargetPath=$pythonw;$shortcut.Arguments='"'+(Join-Path $target 'kora.py')+'"';$shortcut.WorkingDirectory=$target;$shortcut.Save()
+        $shortcut.TargetPath=Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
+        $shortcut.Arguments='-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "'+(Join-Path $target 'Launch-Kora.ps1')+'"'
+        $shortcut.WorkingDirectory=$target;$shortcut.Save()
     }
 }
 Write-Output "Installed Kora in $target. This public edition obtains third-party tools separately."
-if (-not $NoLaunch) { Start-Process -FilePath $pythonPath -ArgumentList ('"'+(Join-Path $target 'kora.py')+'"') -WorkingDirectory $target -WindowStyle Hidden }
+if (-not $NoLaunch) { Start-Process -FilePath powershell.exe -ArgumentList ('-NoProfile -ExecutionPolicy Bypass -File "'+(Join-Path $target 'Launch-Kora.ps1')+'"') -WorkingDirectory $target -WindowStyle Hidden }

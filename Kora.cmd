@@ -1,13 +1,7 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-if "%~1"=="" if exist "%~dp0runtime\pythonw.exe" (
-  start "" /D "%~dp0" "%~dp0runtime\pythonw.exe" "%~dp0kora.py"
-  exit /b 0
-)
-if exist "%~dp0kora.exe" (
-  "%~dp0kora.exe" %*
-) else (
-  powershell.exe -NoProfile -File "%~dp0Launch-Kora.ps1" %*
-)
-if errorlevel 1 pause
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0Launch-Kora.ps1" %*
+set "kora_exit=%errorlevel%"
+if not "%kora_exit%"=="0" pause
+exit /b %kora_exit%

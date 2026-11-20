@@ -33,6 +33,13 @@ fn run() -> Result<i32, String> {
     }
     let exe = env::current_exe().map_err(|e| e.to_string())?;
     let root = application_root(&exe)?;
+    if cfg!(windows) && (args.is_empty() || args.first().map(|s| s == "gui").unwrap_or(false)) {
+        let status = Command::new("powershell.exe")
+            .args(["-NoProfile", "-ExecutionPolicy", "Bypass", "-File"])
+            .arg(root.join("Launch-Kora.ps1")).args(&args)
+            .status().map_err(|e| e.to_string())?;
+        return Ok(status.code().unwrap_or(1));
+    }
     let interpreter = python(&root)?;
     if args.first().map(|s| s == "rea").unwrap_or(false) {
         // Discovery is shared with the desktop edition; REA itself is launched

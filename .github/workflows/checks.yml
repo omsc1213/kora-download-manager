@@ -18,6 +18,9 @@ jobs:
       - name: Python regression checks
         working-directory: tests
         run: python -m unittest test_twitter test_product_features test_save_defaults test_video.PolicyTests test_v02.EvidenceTests -v
+      - name: Startup and upgrade checks
+        shell: pwsh
+        run: ./tests/test_startup.ps1 -PythonExe (Get-Command python.exe).Source
       - name: Browser simulation checks
         run: |
           node tests/test_browser_policy.cjs
@@ -28,4 +31,5 @@ jobs:
       - uses: actions/checkout@v4
       - run: cargo test --offline
       - run: cargo build --release --offline
+
 
