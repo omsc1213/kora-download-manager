@@ -33,3 +33,4 @@ try {
     if ((Get-Content -Raw (Join-Path $empty 'data/startup.log')) -notmatch 'Run Setup.cmd') { throw 'Missing actionable startup log' }
 } finally { $env:PATH=$savedPath;$env:KORA_PYTHON=$savedPython;$env:KORA_DATA_DIR=$savedData }
 Write-Output 'Startup checks passed: install, upgrade, saved Python, paths with spaces, preserved data, readiness and missing-Python log.'
+$global:LASTEXITCODE=0
